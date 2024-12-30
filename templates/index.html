@@ -21,9 +21,11 @@
       color: #333333;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       min-height: 100vh;
+      padding-bottom: 100px; /* Add space at the bottom for the input */
+      overflow: hidden;
     }
 
     h1 {
@@ -97,6 +99,9 @@
       width: 100%;
       max-width: 600px;
       margin: 20px 0;
+      overflow-y: auto; /* Allow scrolling for chat history */
+      height: calc(100vh - 140px); /* Calculate available height for chat messages */
+      scroll-margin-right: 20px;
     }
 
     .list-group-item {
@@ -108,19 +113,34 @@
       font-size: 16px;
       color: #333333;
     }
+
+    .user-prompt {
+      background-color: #e0f7fa; /* Light blue for user prompt */
+      border-left: 5px solid #0078d7;
+    }
+
+    .gpt-response {
+      background-color: #f1f1f1; /* Light gray for GPT response */
+      border-left: 5px solid #0078d7;
+    }
+
+    /* Add style to hide header initially */
+    #header {
+      display: block;
+    }
+
   </style>
 </head>
 
 <body>
   <!-- Logo Section -->
-  <div class="logo">
-    <img src="https://via.placeholder.com/150x50.png?text=Searce+Logo" alt="Searce Logo">
+  <div class="logo" id="header">
+    <img src="/assets/logo.jpg" alt="Logo">
   </div>
 
   <!-- Welcome Message -->
-  <div class="welcome-message">
-    <h1>Searce Product Recommendation Bot</h1>
-    <p>👋 Welcome To Searce Product Recommender!</p>
+  <div class="welcome-message" id="welcome-message">
+    <h1>👋 Welcome To Searce Product Recommender!</h1>
     <p>I am powered by Gemini & here to give you the best product recommendations</p>
   </div>
 
@@ -142,14 +162,23 @@
     integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
 
   <script>
-    $("#gpt-button").click(function () {
+    let firstPromptSent = false;
+
+    function sendMessage() {
       var question = $("#chat-input").val();
       let html_data = `
-        <div class="list-group-item">${question}</div>
+        <div class="list-group-item user-prompt">${question}</div>
         <div id="response"></div>`;
-      $("#chat-input").val("");
+      $("#chat-input").val(""); // Clear input field
 
       $("#list-group").append(html_data);
+
+      if (!firstPromptSent) {
+        // Hide header and welcome message after the first prompt is sent
+        $("#header").fadeOut();
+        $("#welcome-message").fadeOut();
+        firstPromptSent = true;
+      }
 
       $.ajax({
         type: "POST",
@@ -157,10 +186,26 @@
         data: { 'prompt': question },
         success: function (data) {
           let gpt_data = `
-            <div class="list-group-item">${data}</div>`;
+            <div class="list-group-item gpt-response">${data}</div>`;
           $("#list-group").append(gpt_data);
+
+          // Scroll to the bottom after the response is added
+          $("#list-group").scrollTop($("#list-group")[0].scrollHeight);
         }
       });
+    }
+
+    // Send message when the button is clicked
+    $("#gpt-button").click(function () {
+      sendMessage();
+    });
+
+    // Send message when Enter key is pressed
+    $("#chat-input").keypress(function (event) {
+      if (event.which === 13) {  // 13 is the Enter key code
+        event.preventDefault();  // Prevent default action (form submit)
+        sendMessage();
+      }
     });
   </script>
 </body>
